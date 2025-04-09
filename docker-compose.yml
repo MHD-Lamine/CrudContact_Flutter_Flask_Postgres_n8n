@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   db:
     image: postgres
@@ -19,5 +20,22 @@ services:
     env_file:
       - .env
 
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - GENERIC_TIMEZONE=Europe/Paris
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - flask
+      - db
+
 volumes:
   postgres_data:
+  n8n_data:

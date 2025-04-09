@@ -1,9 +1,25 @@
 from flask import Blueprint, request, jsonify
 from models import Contact
 from database import SessionLocal
+import requests
 
 routes = Blueprint("routes", __name__)
 db = SessionLocal()
+
+def notifier_n8n(contact):
+    try:
+        response = requests.post(
+            "http://n8n:5678/webhook-test/new-contact",  # entre conteneurs Docker
+            json={
+                "nom": contact.nom,
+                "email": contact.email,
+                "telephone": contact.telephone
+            },
+            timeout=5
+        )
+        print("Webhook n8n envoyé avec succès :", response.status_code)
+    except Exception as e:
+        print("Erreur lors de l'envoi du webhook n8n :", e)
 
 @routes.route("/contacts", methods=["GET"])
 def get_contacts():
@@ -21,6 +37,10 @@ def add_contact():
     contact = Contact(nom=data["nom"], email=data["email"], telephone=data["telephone"])
     db.add(contact)
     db.commit()
+    
+    # Notifier n8n après ajout
+    notifier_n8n(contact)
+
     return jsonify({"message": "Contact ajouté"})
 
 @routes.route("/contacts/<int:id>", methods=["PUT"])
